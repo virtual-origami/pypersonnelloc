@@ -1,0 +1,80 @@
+localization:
+  version: "0.1"
+  amq: # AMQP Broker Information
+    broker: &amq_connect_info
+      address: "localhost"
+      port: 5672
+    credentials: &amq_credential
+      username: "admin"
+      password: "rabbit"
+  pub_sub:
+    - pub_sub_1: &pub_sub_1
+        type: "amq"
+        broker: *amq_connect_info
+        credential: *amq_credential
+        exchange: "telemetry_exchange"
+        binding_keys: # Default Queue Logic will be: <binding_key>.tracker.<id>
+          - "telemetry.pls."
+    - pub_sub_2: &pub_sub_2
+        type: "amq"
+        broker: *amq_connect_info
+        credential: *amq_credential
+        exchange: "telemetry_exchange"
+        binding_keys:
+          - "telemetry.walker."
+    - pub_sub_3: &pub_sub_3
+        type: "amq"
+        broker: *amq_connect_info
+        credential: *amq_credential
+        exchange: "db_exchange"
+        binding_keys:
+          - "db.pls."
+  attributes:
+    rakf:
+      rakf_1: &rakf_1
+        type: 'rakf'
+        track_dimension: 3
+        model:
+          type: "uwb_imu"     #type can be of   1. "uwb_imu"    2. "uwb"
+          coefficient: { x: 1, y: 1, z: 1 }
+        error:
+          model: { x: 1, y: 1, z: 1 }
+          measurement: { x: 1, y: 1, z: 1 }
+          state_error_variance: { x: 10, y: 10, z: 10 }
+        threshold:
+          residual: { x: 1.5, y: 1.5, z: 1.5 } # C (outer circle)
+          adaptive: { x: 1, y: 1, z: 1} # C0 (Inner Circle)
+          gamma: { x: 50, y: 50, z: 50 }
+        estimator:
+          parameter:
+            count: 10
+        interval: 0.05
+      rakf_2: &rakf_2
+        type: 'rakf'
+        track_dimension: 3
+        model:
+          type: "uwb"     #type can be of   1. "uwb_imu"    2. "uwb"
+          coefficient: { x: 1, y: 1, z: 1 }
+        error:
+          model: { x: 1, y: 1, z: 1 }
+          measurement: { x: 0.5, y: 0.5, z: 0.5 }
+          state_error_variance: { x: 1, y: 1, z: 1 }
+        threshold:
+          residual: { x: 0.5, y: 0.5, z: 0.5 } # C (outer circle)
+          adaptive: { x: 0.25, y: 0.25, z: 0.25 } # C0 (Inner Circle)
+        estimator:
+          parameter:
+            count: 10
+        interval: 0.1
+  trackers:
+    - id: '1'
+      start_position: { x: 47, y: 80, z: 0 }
+      algorithm: *rakf_1
+      protocol:
+        publishers:
+          - *pub_sub_1
+          - *pub_sub_3
+        subscribers:
+          - *pub_sub_2
+
+
