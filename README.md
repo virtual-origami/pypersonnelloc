@@ -54,3 +54,10 @@ __NOTE__: The `rabbitmqtt` stack needs an external docker network called `iotsta
 3. To run the a custom configuration for the Container use:
 
         docker run --rm -v $(pwd)/config.yaml:/pypersonnelloc/config.yaml --network=iotstack pypersonnelloc
+
+### Reference Paper
+
+[1]: https://doi.org/10.3390/s18061970	"Heading Estimation for Pedestrian Dead Reckoning Based on Robust Adaptive Kalman Filtering"
+
+
+
