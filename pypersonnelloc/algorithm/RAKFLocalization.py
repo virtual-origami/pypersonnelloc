@@ -2,8 +2,8 @@ import sys
 import logging
 import json
 import queue
-from pypersonnelloc.pub_sub.AMQP import PubSubAMQP
-from pypersonnelloc.algorithm.RAKF1D import RAKF1D
+from pub_sub.AMQP import PubSubAMQP
+from algorithm.RAKF1D import RAKF1D
 
 
 # logger for this file
@@ -20,7 +20,7 @@ class RAKFLocalization:
     """Class implementation for Robust Adaptive Kalman Filter for 3 Dimension
     """
 
-    def __init__(self, event_loop, config_file):
+    def __init__(self, event_loop, config_file, id, start_coordinates):
         """Initializes RAKF 3D class object
 
         Args:
@@ -28,7 +28,7 @@ class RAKFLocalization:
             tag_id (int): Configuration data for corresponding Tag ID in configuration file to be used
         """
         try:
-            self.id = config_file['id']
+            self.id = id
             self.track_dimension = config_file["algorithm"]['track_dimension']
             self.interval = config_file["algorithm"]["interval"]
             self.rakf_x = None
@@ -48,7 +48,7 @@ class RAKFLocalization:
 
             # Based on the track dimension initial the class attributes
             if self.track_dimension > 0:
-                self.rakf_x = RAKF1D(initial_state=config_file["start_position"]["x"],
+                self.rakf_x = RAKF1D(initial_state=start_coordinates[0],
                                      system_model=algorithm["model"]["coefficient"]["x"],
                                      system_model_error=algorithm["error"]["model"]["x"],
                                      measurement_error=algorithm["error"]["measurement"]["x"],
@@ -60,7 +60,7 @@ class RAKFLocalization:
                                      model_type=algorithm["model"]["type"])
 
             if self.track_dimension > 1:
-                self.rakf_y = RAKF1D(initial_state=config_file["start_position"]["y"],
+                self.rakf_y = RAKF1D(initial_state=start_coordinates[1],
                                      system_model=algorithm["model"]["coefficient"]["y"],
                                      system_model_error=algorithm["error"]["model"]["y"],
                                      measurement_error=algorithm["error"]["measurement"]["x"],
@@ -72,7 +72,7 @@ class RAKFLocalization:
                                      model_type=algorithm["model"]["type"])
 
             if self.track_dimension > 2:
-                self.rakf_z = RAKF1D(initial_state=config_file["start_position"]["z"],
+                self.rakf_z = RAKF1D(initial_state=start_coordinates[2],
                                      system_model=algorithm["model"]["coefficient"]["z"],
                                      system_model_error=algorithm["error"]["model"]["z"],
                                      measurement_error=algorithm["error"]["measurement"]["x"],
@@ -176,21 +176,22 @@ class RAKFLocalization:
 
             for subscriber in self.subscribers:
                 if subscriber.exchange_name == exchange_name:
-                    if "telemetry.walker" in binding_name:
+                    if "generator.personnel" in binding_name:
                         # extract walker id
                         binding_delimited_array = binding_name.split(".")
                         walker_id = binding_delimited_array[len(binding_delimited_array) - 1]
                         msg_attributes = message_body.keys()
                         if ("id" in msg_attributes) and \
-                                ("x_ref_pos" in msg_attributes) and \
-                                ("y_ref_pos" in msg_attributes) and \
-                                ("z_ref_pos" in msg_attributes) and \
+                                ("x_imu_vel" in msg_attributes) and \
+                                ("y_imu_vel" in msg_attributes) and \
+                                ("z_imu_vel" in msg_attributes) and \
                                 ("x_uwb_pos" in msg_attributes) and \
                                 ("y_uwb_pos" in msg_attributes) and \
                                 ("z_uwb_pos" in msg_attributes) and \
+                                ("data_aggregator_id" in msg_attributes) and \
                                 ("timestamp" in msg_attributes):
                             if (walker_id == message_body["id"]) and (walker_id == self.id):
-                                logger.debug(message_body)
+                                logger.debug(f'sub: exchange {exchange_name}: msg {message_body}')
                                 self.consume_telemetry_queue.put_nowait(item=message_body)
 
         except Exception as e:
@@ -201,7 +202,7 @@ class RAKFLocalization:
         for publisher in self.publishers:
             if exchange_name == publisher.exchange_name:
                 await publisher.publish(message_content=msg)
-                logger.debug(msg)
+                logger.debug(f'pub: exchange:{exchange_name}, binding key: {publisher.binding_keys[0]}, msg:{msg}')
 
     async def connect(self):
         for publisher in self.publishers:
@@ -214,9 +215,14 @@ class RAKFLocalization:
         try:
             if not self.consume_telemetry_queue.empty():
                 result = await self._process_measurement(measurement=self.consume_telemetry_queue.get_nowait())
-                await self.publish(exchange_name='telemetry_exchange',
-                                   msg=json.dumps(result).encode())
-                await self.publish(exchange_name='db_exchange',
-                                   msg=json.dumps(result).encode())
+                result_plm = {
+                    "id": result["id"],
+                    "x_est_pos": result["x_est_pos"],
+                    "y_est_pos": result["y_est_pos"],
+                    "z_est_pos": result["z_est_pos"],
+                    "timestamp": result["timestamp"]
+                }
+                await self.publish(exchange_name='plm_walker', msg=json.dumps(result_plm).encode())
+                await self.publish(exchange_name='visual', msg=json.dumps(result).encode())
         except queue.Empty as e:
             logging.info(f"Queue empty no pending messages, \n {e}")

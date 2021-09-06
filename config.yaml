@@ -1,5 +1,4 @@
-localization:
-  version: "0.1"
+preset:
   amq: # AMQP Broker Information
     broker: &amq_connect_info
       address: "localhost"
@@ -8,27 +7,27 @@ localization:
       username: "admin"
       password: "rabbit"
   pub_sub:
-    - pub_sub_1: &pub_sub_1
+    - pub_sub_1: &pub_plm
         type: "amq"
         broker: *amq_connect_info
         credential: *amq_credential
-        exchange: "telemetry_exchange"
+        exchange: "plm_walker"
         binding_keys: # Default Queue Logic will be: <binding_key>.tracker.<id>
-          - "telemetry.pls."
-    - pub_sub_2: &pub_sub_2
+          - "plm.walker."
+    - pub_sub_2: &sub_generator_personnel
         type: "amq"
         broker: *amq_connect_info
         credential: *amq_credential
-        exchange: "telemetry_exchange"
+        exchange: "generator_personnel"
         binding_keys:
-          - "telemetry.walker."
-    - pub_sub_3: &pub_sub_3
+          - "generator.personnel."
+    - pub_sub_3: &pub_visual
         type: "amq"
         broker: *amq_connect_info
         credential: *amq_credential
-        exchange: "db_exchange"
-        binding_keys:
-          - "db.pls."
+        exchange: "visual"
+        binding_keys: # Default Queue Logic will be: <binding_key>.tracker.<id>
+          - "visual.plm.personnel."
   attributes:
     rakf:
       rakf_1: &rakf_1
@@ -43,7 +42,7 @@ localization:
           state_error_variance: { x: 10, y: 10, z: 10 }
         threshold:
           residual: { x: 1.5, y: 1.5, z: 1.5 } # C (outer circle)
-          adaptive: { x: 1, y: 1, z: 1} # C0 (Inner Circle)
+          adaptive: { x: 1, y: 1, z: 1 } # C0 (Inner Circle)
           gamma: { x: 50, y: 50, z: 50 }
         estimator:
           parameter:
@@ -66,15 +65,23 @@ localization:
           parameter:
             count: 10
         interval: 0.1
+  protocols:
+    protocol_1: &protocol_1
+      publishers:
+        - *pub_plm
+        - *pub_visual
+      subscribers:
+        - *sub_generator_personnel
+localization:
+  version: "0.1"
   trackers:
-    - id: '1'
-      start_position: { x: 47, y: 80, z: 0 }
-      algorithm: *rakf_1
-      protocol:
-        publishers:
-          - *pub_sub_1
-          - *pub_sub_3
-        subscribers:
-          - *pub_sub_2
+    - algorithm: *rakf_1
+      protocol: *protocol_1
+
+#    - id: '1'
+#      start_position: { x: 120, y: 55, z: 0 }
+#      algorithm: *rakf_1
+#      protocol: *protocol_1
+
 
 

@@ -1,6 +1,6 @@
 import sys
 import logging
-from pypersonnelloc.algorithm.RAKFLocalization import RAKFLocalization
+from algorithm.RAKFLocalization import RAKFLocalization
 
 # logger for this file
 logger = logging.getLogger(__name__)
@@ -12,11 +12,13 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 
-def get_tracker(event_loop, config_file, algorithm):
+def get_tracker(event_loop, config_file, algorithm, id, start_coordinates):
     try:
         if algorithm == "RAKF":
             algo = RAKFLocalization(event_loop=event_loop,
-                                    config_file=config_file)
+                                    config_file=config_file,
+                                    id=id,
+                                    start_coordinates=start_coordinates)
             return algo
         else:
             raise AssertionError("Algorithm not supported")
