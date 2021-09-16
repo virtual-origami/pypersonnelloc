@@ -1,6 +1,6 @@
 import sys
 import logging
-from algorithm.RAKFLocalization import RAKFLocalization
+from pypersonnelloc.algorithm.RAKFLocalization import RAKFLocalization
 
 # logger for this file
 logger = logging.getLogger(__name__)

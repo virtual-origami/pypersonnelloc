@@ -31,7 +31,7 @@ Following algorithm are supported
 ### Usage
 Basic usage:
 
-    $ personnel-localization -c config.yaml
+    $ personnel-localization -c config.yaml -i 1 -s 10 20
 
 ### Message Broker (RabbitMQ)
 

@@ -2,7 +2,8 @@
 set -e
 
 if [ "${1:0:1}" = '-' ]; then
-    set -- personnel-localization "$@"
+    set -- personnel-loc "$@"
 fi
 
+echo "$@"
 exec "$@"

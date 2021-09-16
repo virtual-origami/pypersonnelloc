@@ -6,7 +6,7 @@ import sys
 import yaml
 import signal
 import logging
-from localization.Localization import get_tracker
+from pypersonnelloc.localization.tracker import get_tracker
 
 logging.basicConfig(level=logging.WARNING, format='%(levelname)-8s [%(filename)s:%(lineno)d] %(message)s')
 
@@ -92,7 +92,7 @@ async def app(eventloop, config, id, start_coordinates):
                     sys.exit(-1)
 
         except Exception as e:
-            logger.error(f'Error while reading configuration: {e}')
+            logger.error(f'Error while Robot Instantiation: {e}')
             break
 
         # continuously monitor signal handle and update tracker

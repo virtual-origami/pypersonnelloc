@@ -2,8 +2,8 @@ import sys
 import logging
 import json
 import queue
-from pub_sub.AMQP import PubSubAMQP
-from algorithm.RAKF1D import RAKF1D
+from pypersonnelloc.pub_sub.AMQP import PubSubAMQP
+from pypersonnelloc.algorithm.RAKF1D import RAKF1D
 
 
 # logger for this file

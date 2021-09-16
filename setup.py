@@ -27,7 +27,7 @@ setup(
     author_email='she@biba.uni-bremen.de, des@biba.uni-bremen.de',
     license='MIT License',
     packages=find_packages(),
-    scripts=['bin/personnel-localization'],
+    scripts=['bin/personnel-loc'],
     install_requires=reqs,
     include_data_package=True,
     zip_safe=False
