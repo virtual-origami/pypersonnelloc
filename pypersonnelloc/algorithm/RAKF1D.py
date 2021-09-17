@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 import statsmodels.api as sm
 import logging
@@ -39,59 +41,55 @@ class RAKF1D:
         """
         try:
             # timestamp
-            self.time_previous = -1.0
+            self.time_previous = -1.0  # float
 
             # model type
-            self.model_type = model_type
+            self.model_type = model_type  # string
 
             # states
-            self.state_model_prediction = None
-            self.state_model = initial_state  # X
+            self.state_model_prediction = 0.0  # float
+            self.state_model = float(initial_state)  # float
 
             # system model
-            self.system_model = system_model  # A
-            self.system_model_error = system_model_error  # Q
+            self.system_model = float(system_model)  # float
+            self.system_model_error = float(system_model_error)  # float
 
             # measurement
-            self.state_measurement_relation = 1  # C
-            self.measurement_standard_deviation = np.sqrt(measurement_error)
-            self.measurement_prediction = None
+            self.state_measurement_relation = 1.0  # float
+            self.measurement_standard_deviation = float(math.sqrt(measurement_error))  # float
+            self.measurement_prediction = 0.0  # float
 
             # residual
-            self.residual_threshold = residual_threshold  # c
-            self.residual_weight = None
-            self.residual_measurement = None
-            self.residual_measurement_dash = None
-            self.gamma = gamma
+            self.residual_threshold = float(residual_threshold)  # c # float
+            self.residual_weight = 0.0  # float
+            self.residual_measurement = 0.0  # float
+            self.residual_measurement_dash = 0.0  # float
+            self.gamma = float(gamma)  # float
 
             # state error variance
-            self.state_error_variance_prediction = None
-            self.state_error_variance = state_error_variance  # P
+            self.state_error_variance_prediction = 0.0  # float
+            self.state_error_variance = state_error_variance  # P # float
 
             # state estimation
-            self.state_estimation = None
-            self.delta_state_estimate = None
+            self.state_estimation = 0.0  # float
+            self.delta_state_estimate = 0.0  # float
 
             # gain
-            self.gain = None
+            self.gain = 0.0  # float
 
             # adaptive
-            self.adaptive_factor = None
-            self.adaptive_threshold = adaptive_threshold  # co
+            self.adaptive_factor = 0.0  # float
+            self.adaptive_threshold = float(adaptive_threshold)  # co
 
             # parameter estimation
-            self.measurement_buffer = np.zeros(estimator_parameter_count)
-            self.residual_weight_buffer = np.ones(estimator_parameter_count)
-            self.position_buffer = np.zeros(estimator_parameter_count)
-            self.param_est = sm.WLS(self.measurement_buffer, self.position_buffer, self.residual_weight_buffer)
-            self.estimator_parameter_count = estimator_parameter_count
+            self.estimator_parameter_count = int(estimator_parameter_count)  # integer
+            self.measurement_buffer = np.zeros(self.estimator_parameter_count)  # np array
+            self.residual_weight_buffer = np.ones(self.estimator_parameter_count)  # np array
+            self.position_buffer = np.zeros(self.estimator_parameter_count)  # np array
+            # self.param_est = sm.WLS(self.measurement_buffer, self.position_buffer, self.residual_weight_buffer)
 
-            if self.model_type == 'uwb_imu':
-                self.velocity_buffer = np.zeros(estimator_parameter_count)
-                self.acceleration_buffer = np.zeros(estimator_parameter_count)
-            else:
-                self.velocity_buffer = None
-                self.acceleration_buffer = None
+            self.velocity_buffer = np.zeros(self.estimator_parameter_count)  # np array
+            self.acceleration_buffer = np.zeros(self.estimator_parameter_count)  # np array
 
         except Exception as e:
             logging.critical(e)
@@ -115,40 +113,42 @@ class RAKF1D:
         """
         try:
             # Get timedelta based on timestamp
-            if self.time_previous < 0:
+            if self.time_previous < 0.0:
                 timedelta = 0.0
             else:
                 timedelta = timestamp_ms - self.time_previous
-                timedelta /= 1000 # millisec to sec conversion
-            self.time_previous = timestamp_ms
+                timedelta /= 1000.0  # millisec to sec conversion
+            self.time_previous = float(timestamp_ms)
 
             # -----------------  Prediction  -----------------------------------
             # equation 29
-            self.state_model_prediction = (self.system_model * self.state_model) + (velocity * timedelta) + \
-                                          (acceleration * (timedelta ** 2) * 0.5)
+            self.state_model_prediction = float(
+                (self.system_model * self.state_model) + (velocity * timedelta) +
+                (acceleration * (timedelta ** 2) * 0.5))
 
             # equation 30
-            self.state_error_variance_prediction = (self.system_model * self.state_error_variance * self.system_model) \
-                                                   + self.system_model_error
+            self.state_error_variance_prediction = float(
+                (self.system_model * self.state_error_variance * self.system_model) + self.system_model_error)
             # ----------------  Updating  ---------------------------------------
 
             # equation 35
-            self.measurement_prediction = self.state_measurement_relation * self.state_model_prediction
+            self.measurement_prediction = float(self.state_measurement_relation * self.state_model_prediction)
 
             # equation 34
-            self.residual_measurement = current_measurement - self.measurement_prediction
+            self.residual_measurement = float(current_measurement - self.measurement_prediction)
 
             # equation 33
-            self.residual_measurement_dash = abs(self.residual_measurement / self.measurement_standard_deviation)
+            self.residual_measurement_dash = abs(float(self.residual_measurement / self.measurement_standard_deviation))
 
             # equation 31 & 32
             if self.residual_measurement_dash <= self.residual_threshold:
-                self.residual_weight = 1 / self.measurement_standard_deviation
+                self.residual_weight = float(1.0 / self.measurement_standard_deviation)
             else:
-                # self.residual_weight = self.residual_threshold / (self.residual_measurement_dash * \
-                #                                                   self.measurement_standard_deviation)  # as per paper
-                self.residual_weight = (self.residual_threshold / (self.residual_measurement_dash * 2 * self.gamma)) \
-                                       * (1 / self.measurement_standard_deviation)  # as per avinaash
+                # self.residual_weight = float(self.residual_threshold / (self.residual_measurement_dash * \
+                #                                                   self.measurement_standard_deviation)) # as per paper
+                self.residual_weight = float(
+                    (self.residual_threshold / (self.residual_measurement_dash * 2.0 * self.gamma)) \
+                    * (1 / self.measurement_standard_deviation))  # as per avinaash
 
             # equation 37 (different from paper , because velocity and acceleration)
             # update position buffer
@@ -170,86 +170,138 @@ class RAKF1D:
 
                 wls_model = sm.WLS(self.measurement_buffer, uwb_imu_observation_matrix,
                                    self.residual_weight_buffer).fit()  # with imu
-                self.state_estimation = wls_model.predict(
+                self.state_estimation = float(wls_model.predict(
                     [uwb_imu_observation_matrix[-1, 0], uwb_imu_observation_matrix[-1, 1],
-                     uwb_imu_observation_matrix[-1, 2]])
+                     uwb_imu_observation_matrix[-1, 2]]))
             else:
                 wls_model = sm.WLS(self.measurement_buffer, self.position_buffer,
                                    self.residual_weight_buffer).fit()  # without imu only
-                self.state_estimation = wls_model.predict(self.position_buffer[self.estimator_parameter_count - 1])
+                self.state_estimation = float(
+                    wls_model.predict(self.position_buffer[self.estimator_parameter_count - 1]))
 
             # equation 36
-            self.delta_state_estimate = (self.state_estimation - self.state_model_prediction) / self.state_error_variance_prediction
+            self.delta_state_estimate = float(
+                (self.state_estimation - self.state_model_prediction) / self.state_error_variance_prediction)
 
             # equation 38
             if self.delta_state_estimate < self.adaptive_threshold:
-                self.adaptive_factor = 1.0
+                self.adaptive_factor = float(1.0)
             elif self.adaptive_threshold < self.delta_state_estimate < self.residual_threshold:
-                self.adaptive_factor = (self.adaptive_threshold / self.delta_state_estimate * self.gamma)
+                self.adaptive_factor = float((self.adaptive_threshold / self.delta_state_estimate * self.gamma))
             else:
-                self.adaptive_factor = self.delta_state_estimate * self.gamma
+                self.adaptive_factor = float(self.delta_state_estimate * self.gamma)
 
             # equation 39
-            reciprocal_adaptive_factor = 1 / self.adaptive_factor
-            reciprocal_residual_weight = 1 / self.residual_weight
-            numerator = reciprocal_adaptive_factor * self.state_error_variance_prediction * self.state_measurement_relation
-            denominator = (reciprocal_adaptive_factor * self.state_measurement_relation * self.state_error_variance_prediction * self.state_measurement_relation) + reciprocal_residual_weight
-            self.gain = numerator / denominator
+            reciprocal_adaptive_factor = 1.0 / self.adaptive_factor
+            reciprocal_residual_weight = 1.0 / self.residual_weight
+            numerator = float(reciprocal_adaptive_factor * self.state_error_variance_prediction *
+                              self.state_measurement_relation)
+            denominator = float((reciprocal_adaptive_factor * self.state_measurement_relation *
+                                 self.state_error_variance_prediction * self.state_measurement_relation) +
+                                reciprocal_residual_weight)
+            self.gain = float(numerator / denominator)
 
             # equation 40
-            self.state_model = self.state_model_prediction + (self.gain * self.residual_measurement)
+            self.state_model = float(self.state_model_prediction + (self.gain * self.residual_measurement))
 
             # equation 41
             # not done here, as normalization is not need for 1 D
 
             # equation 42
-            self.state_error_variance = (1 - self.gain * self.state_measurement_relation) * self.state_error_variance_prediction
+            self.state_error_variance = float(
+                (1 - self.gain * self.state_measurement_relation) * self.state_error_variance_prediction)
 
             # Activity related to eqn 37 , update parameters in parameter estimation based on states
             # self.param_est.adapt(self.state_model, self.measurement_buffer)
             self.residual_weight_buffer = np.roll(self.residual_weight_buffer, -1)
             self.residual_weight_buffer[self.estimator_parameter_count - 1] = self.residual_weight  # Weight
 
-            eqn_result = {
-                "residual_threshold": self.residual_threshold,
-                "adaptive_threshold": self.adaptive_threshold,
-                "eqn29": self.state_model_prediction,
-                "eqn30": self.state_error_variance_prediction,
-                "eqn35": self.measurement_prediction,
-                "eqn34": self.residual_measurement,
-                "eqn33": self.residual_measurement_dash,
-                "eqn31": self.residual_weight,
-                "eqn37": self.state_estimation,
-                "eqn36": self.delta_state_estimate,
-                "eqn38": self.adaptive_factor,
-                "eqn39": self.gain,
-                "eqn39_numerator": numerator,
-                "eqn39_denominator": denominator,
-                "eqn40": self.state_model,
-                "eqn42": self.state_error_variance
-            }
-
-            variable_result = {
-                "state_model_prediction": self.state_model_prediction,
-                "state_error_variance_prediction": self.state_error_variance_prediction,
-                "measurement_prediction": self.measurement_prediction,
-                "residual_measurement": self.residual_measurement,
-                "residual_measurement_dash": self.residual_measurement_dash,
-                "residual_threshold": self.residual_threshold,
-                "residual_weight": self.residual_weight,
-                "state_estimation": self.state_estimation,
-                "delta_state_estimate": self.delta_state_estimate,
-                "adaptive_threshold": self.adaptive_threshold,
-                "adaptive_factor": self.adaptive_factor,
-                "gain_numerator": numerator,
-                "gain_denominator": denominator,
-                "gain": self.gain,
-                "state_model": self.state_model,
-                "state_error_variance": self.state_error_variance
-            }
-            logger.debug(eqn_result)
-            logger.debug(variable_result)
             return float(self.state_model)
         except Exception as e:
             logging.critical(e)
             exit(-1)
+
+    def update_state(self, state_information):
+        # timestamp
+        self.time_previous = float(state_information["time_previous"])  # float
+
+        # model type
+        self.model_type = state_information["model_type"]  # string
+
+        # states
+        self.state_model_prediction = float(state_information["state_model_prediction"])  # float
+        self.state_model = float(state_information["state_model"])  # float
+
+        # system model
+        self.system_model = float(state_information["system_model"])  # float
+        self.system_model_error = float(state_information["system_model_error"])  # float
+
+        # measurement
+        self.state_measurement_relation = float(state_information["state_measurement_relation"])  # float
+        self.measurement_standard_deviation = float(state_information["measurement_standard_deviation"])  # float
+        self.measurement_prediction = float(state_information["measurement_prediction"])  # float
+
+        # residual
+        self.residual_threshold = float(state_information["residual_threshold"])  # c # float
+        self.residual_weight = float(state_information["residual_weight"])  # float
+        self.residual_measurement = float(state_information["residual_measurement"])  # float
+        self.residual_measurement_dash = float(state_information["residual_measurement_dash"])  # float
+        self.gamma = float(state_information["gamma"])  # float
+
+        # state error variance
+        self.state_error_variance_prediction = float(state_information["state_error_variance_prediction"])  # float
+        self.state_error_variance = float(state_information["state_error_variance"])  # P # float
+
+        # state estimation
+        self.state_estimation = float(state_information["state_estimation"])  # float
+        self.delta_state_estimate = float(state_information["delta_state_estimate"])  # float
+
+        # gain
+        self.gain = float(state_information["gain"])  # float
+
+        # adaptive
+        self.adaptive_factor = float(state_information["adaptive_factor"])  # float
+        self.adaptive_threshold = float(state_information["adaptive_threshold"])  # co
+
+        # parameter estimation
+        self.estimator_parameter_count = int(state_information["estimator_parameter_count"])  # integer
+
+        self.measurement_buffer = np.array(state_information["measurement_buffer"], dtype=np.float32)  # np array
+        self.residual_weight_buffer = np.array(state_information["residual_weight_buffer"],
+                                                 dtype=np.float32)  # np array
+        self.position_buffer = np.array(state_information["position_buffer"], dtype=np.float32)  # np array
+
+        self.velocity_buffer = np.array(state_information["velocity_buffer"], dtype=np.float32)  # np array
+        self.acceleration_buffer = np.array(state_information["acceleration_buffer"], dtype=np.float32)  # np array
+
+    def state_to_dict(self):
+        state_information = {
+            "time_previous": self.time_previous,
+            "model_type": self.model_type,
+            "state_model_prediction": self.state_model_prediction,
+            "state_model": self.state_model,
+            "system_model": self.system_model,
+            "system_model_error": self.system_model_error,
+            "state_measurement_relation": self.state_measurement_relation,
+            "measurement_standard_deviation": self.measurement_standard_deviation,
+            "measurement_prediction": self.measurement_prediction,
+            "residual_threshold": self.residual_threshold,
+            "residual_weight": self.residual_weight,
+            "residual_measurement": self.residual_measurement,
+            "residual_measurement_dash": self.residual_measurement_dash,
+            "gamma": self.gamma,
+            "state_error_variance_prediction": self.state_error_variance_prediction,
+            "state_error_variance": self.state_error_variance,
+            "state_estimation": self.state_estimation,
+            "delta_state_estimate": self.delta_state_estimate,
+            "gain": self.gain,
+            "adaptive_factor": self.adaptive_factor,
+            "adaptive_threshold": self.adaptive_threshold,
+            "estimator_parameter_count": self.estimator_parameter_count,
+            "measurement_buffer": self.measurement_buffer.tolist(),
+            "residual_weight_buffer": self.residual_weight_buffer.tolist(),
+            "position_buffer": self.position_buffer.tolist(),
+            "velocity_buffer": self.velocity_buffer.tolist(),
+            "acceleration_buffer": self.acceleration_buffer.tolist()
+        }
+        return state_information

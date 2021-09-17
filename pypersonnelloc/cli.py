@@ -6,7 +6,8 @@ import sys
 import yaml
 import signal
 import logging
-from pypersonnelloc.localization.tracker import get_tracker
+from pypersonnelloc.algorithm import RAKFLocalization
+
 
 logging.basicConfig(level=logging.WARNING, format='%(levelname)-8s [%(filename)s:%(lineno)d] %(message)s')
 
@@ -32,8 +33,6 @@ def parse_arguments():
     parser.add_argument('--config', '-c', required=True,
                         help='YAML Configuration File for Personnel localization Service '
                              'with path')
-    parser.add_argument('--id', '-i', required=True, help='Provide robot id')
-    parser.add_argument('--start', '-s', nargs='+', type=float, required=True, help='Provide start coordinates')
     return parser.parse_args()
 
 
@@ -43,23 +42,10 @@ def signal_handler(name):
     is_sighup_received = True
 
 
-async def app(eventloop, config, id, start_coordinates):
+async def app(eventloop, config):
     """Main application for personnel localization service"""
     tracker_in_ws = []
     global is_sighup_received
-
-    # check start coordinate for invalid value
-    _s = [0.0, 0.0, 0.0]
-    if len(start_coordinates) == 1:
-        _s[0] = start_coordinates[0]
-    elif len(start_coordinates) == 2:
-        _s[0] = start_coordinates[0]
-        _s[1] = start_coordinates[1]
-    else:
-        _s[0] = start_coordinates[0]
-        _s[1] = start_coordinates[1]
-        _s[2] = start_coordinates[2]
-    start_coordinates = _s
 
     while True:
         # Read configuration
@@ -80,11 +66,9 @@ async def app(eventloop, config, id, start_coordinates):
                     sys.exit(-1)
 
                 if tracker['algorithm']['type'] == 'rakf':
-                    tracker_rakf = get_tracker(event_loop=eventloop,
-                                               config_file=tracker,
-                                               algorithm="RAKF",
-                                               id=id,
-                                               start_coordinates=start_coordinates)
+                    tracker_rakf = RAKFLocalization(event_loop=eventloop,
+                                                    config_file=tracker)
+
                     await tracker_rakf.connect()
                     tracker_in_ws.append(tracker_rakf)
                 else:
@@ -120,7 +104,7 @@ def read_config(yaml_config_file):
         logger.error('YAML Configuration File not Found.')
 
 
-def main():
+def app_main():
     """Initialization"""
     args = parse_arguments()
     if not os.path.isfile(args.config):
@@ -130,10 +114,5 @@ def main():
     event_loop = asyncio.get_event_loop()
     event_loop.add_signal_handler(signal.SIGHUP, functools.partial(signal_handler, name='SIGHUP'))
     event_loop.run_until_complete(app(eventloop=event_loop,
-                                      config=args.config,
-                                      id=args.id,
-                                      start_coordinates=tuple(args.start)))
+                                      config=args.config))
 
-
-if __name__ == "__main__":
-    main()

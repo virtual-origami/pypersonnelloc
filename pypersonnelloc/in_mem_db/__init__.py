@@ -1,8 +1,8 @@
 from __future__ import generator_stop
 from __future__ import annotations
 
-from .tracker import get_tracker
+from .redis_db import RedisDB
 
 __all__ = [
-    'get_tracker'
+    'RedisDB'
 ]

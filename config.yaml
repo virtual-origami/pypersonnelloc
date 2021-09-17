@@ -1,10 +1,16 @@
 preset:
   amq: # AMQP Broker Information
     broker: &amq_connect_info
-      address: "rabbitmq"
+      address: "localhost"
       port: 5672
     credentials: &amq_credential
       username: "admin"
+      password: "rabbit"
+  redis: &redis_connect_info
+    server:
+      address: "localhost"
+      port: 6379
+    credentials:
       password: "rabbit"
   pub_sub:
     - pub_sub_1: &pub_plm
@@ -12,22 +18,22 @@ preset:
         broker: *amq_connect_info
         credential: *amq_credential
         exchange: "plm_walker"
-        binding_keys: # Default Queue Logic will be: <binding_key>.tracker.<id>
-          - "plm.walker."
+        queue: "plm_walker_rk"
+        handler:
     - pub_sub_2: &sub_generator_personnel
         type: "amq"
         broker: *amq_connect_info
         credential: *amq_credential
         exchange: "generator_personnel"
-        binding_keys:
-          - "generator.personnel."
+        queue: "generator_personnel_rk"
+        handler: "personnel_msg_handler"
     - pub_sub_3: &pub_visual
         type: "amq"
         broker: *amq_connect_info
         credential: *amq_credential
         exchange: "visual"
-        binding_keys: # Default Queue Logic will be: <binding_key>.tracker.<id>
-          - "visual.plm.personnel."
+        queue: "visual_plm_personnel_rk"
+        handler:
   attributes:
     rakf:
       rakf_1: &rakf_1
@@ -77,11 +83,12 @@ localization:
   trackers:
     - algorithm: *rakf_1
       protocol: *protocol_1
+      in_mem_db: *redis_connect_info
 
 #    - id: '1'
 #      start_position: { x: 120, y: 55, z: 0 }
 #      algorithm: *rakf_1
 #      protocol: *protocol_1
-
+#      start_position: { x: 30, y: 50, z: 0 }
 
 

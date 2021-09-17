@@ -24,11 +24,9 @@ class PubSubAMQP:
         try:
             self.broker_info = config_file["broker"]
             self.credential_info = config_file["credential"]
-            self.binding_keys = list()
             self.exchange_name = config_file["exchange"]
-            for binding in config_file["binding_keys"]:
-                self.binding_keys.append(binding)
-
+            self.queue_name = config_file["queue"]
+            self.cb_handler = config_file["handler"]
             self.binding_suffix = binding_suffix
             self.eventloop = eventloop
             self.connection = None
@@ -67,10 +65,7 @@ class PubSubAMQP:
         """_sub_connect: private method for subscribing data to Broker. Setup dedicated channel, exchange"""
         try:
             await self.channel.set_qos(prefetch_count=1)
-            self.exchange = await self.channel.declare_exchange(self.exchange_name, ExchangeType.FANOUT)
-            queue = await self.channel.declare_queue(exclusive=True)
-            for binding in self.binding_keys:
-                await queue.bind(exchange=self.exchange, routing_key=binding + self.binding_suffix)
+            queue = await self.channel.declare_queue(self.queue_name, durable=True)
             await queue.consume(self._sub_on_message)
         except Exception as e:
             logger.error('_sub_connect: Exception during setup of sub channel, exchange')
@@ -84,32 +79,24 @@ class PubSubAMQP:
         async with message.process():
             logger.debug(f"msg received: Exchange {message.exchange}, Routing {message.routing_key}")
             if self.app_callback is not None:
-                self.app_callback(
+                await self.app_callback(
                     exchange_name=message.exchange,
                     binding_name=message.routing_key,
                     message_body=message.body
                 )
 
-    async def publish(self, message_content, priority=0, external_binding_suffix=None):
+    async def publish(self, message_content, priority=0):
         """publish: Produce Message to Message Broker
         - message_content: payload of message to be published
         - priority: message priority
         """
         try:
-            self.exchange = await self.channel.declare_exchange(self.exchange_name, ExchangeType.FANOUT)
-            for binding_key in self.binding_keys:
-                message = Message(
-                    body=message_content,
-                    delivery_mode=DeliveryMode.NOT_PERSISTENT,
-                    priority=priority
-                )
-                # logger.debug(
-                #     f'msg Publish: Exchange: {self.exchange_name}, Routing:{binding_key + self.binding_suffix}'
-                # )
-                if external_binding_suffix is not None:
-                    await self.exchange.publish(message, routing_key=binding_key + external_binding_suffix)
-                else:
-                    await self.exchange.publish(message, routing_key=binding_key + self.binding_suffix)
+            message = Message(
+                body=message_content,
+                delivery_mode=DeliveryMode.PERSISTENT,
+                priority=priority
+            )
+            await self.channel.default_exchange.publish(message, routing_key=self.queue_name)
         except aio_pika_exception.AMQPException as e:
             logger.error(e)
             await self.terminate()
@@ -124,5 +111,5 @@ class PubSubAMQP:
         """terminate: close the connection to the broker"""
         await self.connection.close()
 
-
-
+    def get_callback_handler_name(self):
+        return self.cb_handler
