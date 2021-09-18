@@ -1,5 +1,5 @@
 FROM python:3.8.3-slim-buster AS base
-RUN apt-get update && apt-get -y python3-pandas
+RUN apt-get update && apt-get install -y python3-pandas
 
 
 # Dedicated Workdir for App
