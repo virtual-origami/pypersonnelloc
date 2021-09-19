@@ -1,4 +1,4 @@
-FROM python:3.8.3-slim-buster AS base
+FROM python:3.7.6-buster AS base
 
 # Dedicated Workdir for App
 WORKDIR /pypersonnelloc
