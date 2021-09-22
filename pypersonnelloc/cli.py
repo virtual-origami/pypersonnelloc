@@ -56,6 +56,8 @@ async def app(eventloop, config):
             break
         # health server
         health_server = HealthServer(config=tracker_config["health_server"], event_loop=eventloop)
+        eventloop.create_task(health_server.server_loop())
+        
         logger.debug("Personnel localization Service Version: %s", tracker_config['version'])
 
         try:
@@ -85,7 +87,6 @@ async def app(eventloop, config):
             for each_tracker in tracker_in_ws:
                 await each_tracker.update()
                 
-            await health_server.server_loop()
             await asyncio.sleep(each_tracker.interval)
 
         # If SIGHUP Occurs, Delete the instances
