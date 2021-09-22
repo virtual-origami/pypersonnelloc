@@ -6,6 +6,8 @@ preset:
     credentials: &amq_credential
       username: "admin"
       password: "rabbit"
+  health_server_info: &health_server_info
+    port: "9012"
   redis: &redis_connect_info
     server:
       address: "redis"
@@ -80,6 +82,7 @@ preset:
         - *sub_generator_personnel
 localization:
   version: "0.1"
+  health_server: *health_server_info
   trackers:
     - algorithm: *rakf_1
       protocol: *protocol_1
