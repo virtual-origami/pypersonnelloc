@@ -2,9 +2,12 @@
 
 pypersonnelloc is personnel localization service to extract estimate of position coordinate in a noisy indoor environment.
 
-Following algorithm are supported
+![Stateless App Build CI/CD Workflow Status](https://github.com/virtual-origami/pypersonnelloc/workflows/Stateless%20App%20Build%20CI/CD/badge.svg?branch=rainbow_v1)
 
-1. Robust Adaptive Kalman Filter
+
+Following algorithm are supported:
+
+- Robust Adaptive Kalman Filter
 
 ## Development
 
@@ -39,9 +42,9 @@ Following algorithm are supported
 ### Usage
 Run `personnel-localization` binary in command line:
 
-- -c : Configuration file path
-- -i : ID of the personnel
-- -s : 2D/3D start Coordinates of the personnel (Initial/start point)
+- `-c : Configuration file path`
+- `-i : ID of the personnel`
+- `-s : 2D/3D start Coordinates of the personnel (Initial/start point)`
 
 ```bash
 $ personnel-localization -c config.yaml -i 1 -s 10 20
@@ -81,3 +84,15 @@ __NOTE__: The `rabbitmqtt` stack needs an external docker network called `iotsta
 
    https://doi.org/10.3390/s18061970 
 
+## Maintainers
+The repository is maintained by:
+
+- [Karthik Shenoy Panambur](mailto:she@biba.uni-bremen.de)
+- [Shantanoo Desai](mailto:des@biba.uni-bremen.de)
+
+[__BIBA - Bremer Institut für Produktion und Logistik GmbH__](www.biba.uni-bremen.de)
+
+## FUNDING
+
+* The development of this codebase and repository is driven through the [RAINBOW Project](https://rainbow-h2020.eu/). RAINBOW Project has received funding from the European Union’s Horizon 2020 programme under grant agreement number __871403__
+* The development of this codebase and repository is driven through the [ASSURED Project](https://www.project-assured.eu/). ASSURED project is funded by the European Union's Horizon 2020 programme under Grant Agreement number __952697__
