@@ -1,19 +1,19 @@
 preset:
   amq: # AMQP Broker Information
     broker: &amq_connect_info
-      address: "rabbitmq"
+      address: ${RABBITMQ}
       port: 5672
     credentials: &amq_credential
-      username: "admin"
-      password: "rabbit"
+      username: ${RABBITMQ_USERNAME}
+      password: ${RABBITMQ_PASSWORD}
   health_server_info: &health_server_info
     port: "9012"
   redis: &redis_connect_info
     server:
-      address: "redis"
+      address: ${REDIS}
       port: 6379
     credentials:
-      password: "rabbit"
+      password: ${REDIS_PASSWORD}
   pub_sub:
     - pub_sub_1: &pub_plm
         type: "amq"
@@ -81,7 +81,7 @@ preset:
       subscribers:
         - *sub_generator_personnel
 localization:
-  version: "0.1"
+  version: "0.3"
   health_server: *health_server_info
   trackers:
     - algorithm: *rakf_1
